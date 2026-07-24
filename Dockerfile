@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -trimpath -ldflags="-s -w" \
     -o /out/semrel-plugin-publisher-docker ./cmd/plugin
 
-FROM docker:28.3.3-cli AS docker-cli
+FROM docker:29.6.2-cli@sha256:be132a9f282288de4afaf63379dff75711fda0147c6b72a9df44e51841402144 AS docker-cli
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
