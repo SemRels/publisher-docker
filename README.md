@@ -42,8 +42,8 @@ socket and authentication configuration.
 
 ```yaml
 plugins:
-  - uses: publisher-docker
-    phase: publish
+  - uses: @semrel/publisher-docker
+    phase: release
     env:
       SEMREL_PLUGIN_IMAGE: acme-api:build
       SEMREL_PLUGIN_REF: ghcr.io/acme/api:{version}
