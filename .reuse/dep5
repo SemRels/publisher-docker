@@ -1,14 +1,19 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: plugin-template
-Upstream-Contact: The plugin-template Authors <https://github.com/SemRels/plugin-template>
-Source: https://github.com/SemRels/plugin-template
+Upstream-Name: publisher-docker
+Upstream-Contact: The publisher-docker Authors <https://github.com/SemRels/publisher-docker>
+Source: https://github.com/SemRels/publisher-docker
 
 # ----------------------------------------------------------------------------
 # Documentation and community health files
 # ----------------------------------------------------------------------------
 Files: *.md
  .github/**/*.md
-Copyright: 2026 The plugin-template Authors
+Copyright: 2026 The publisher-docker Authors
+License: Apache-2.0
+
+# JSON Schema files
+Files: schema/*.json
+Copyright: 2026 The publisher-docker Authors
 License: Apache-2.0
 
 # ----------------------------------------------------------------------------
@@ -31,7 +36,7 @@ Files: Makefile
  .reuse/dep5
  cmd/**/*.go
  internal/**/*.go
-Copyright: 2026 The plugin-template Authors
+Copyright: 2026 The publisher-docker Authors
 License: Apache-2.0
 
 # ----------------------------------------------------------------------------
@@ -40,5 +45,5 @@ License: Apache-2.0
 Files: LICENSE
  LICENSES/Apache-2.0.txt
  NOTICE
-Copyright: 2026 The plugin-template Authors
+Copyright: 2026 The publisher-docker Authors
 License: Apache-2.0
