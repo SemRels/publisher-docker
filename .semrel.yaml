@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# SPDX-FileCopyrightText: 2026 The plugin-template Authors
+# SPDX-FileCopyrightText: 2026 The publisher-docker Authors
 # yaml-language-server: $schema=https://semrel.io/schema/v1.json
 #
 # semrel uses itself to manage this plugin's releases.

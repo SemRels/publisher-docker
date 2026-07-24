@@ -1,71 +1,142 @@
-# plugin-template
+# publisher-docker
 
-[![Latest Release](https://img.shields.io/github/v/release/SemRels/plugin-template?label=version&color=blue)](https://github.com/SemRels/plugin-template/releases/latest)
-[![CI](https://github.com/SemRels/plugin-template/actions/workflows/ci.yml/badge.svg)](https://github.com/SemRels/plugin-template/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/SemRels/plugin-template)](LICENSE)
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SemRels/plugin-template/badge)](https://scorecard.dev/viewer/?uri=github.com/SemRels/plugin-template)
-[![REUSE status](https://api.reuse.software/badge/github.com/SemRels/plugin-template)](https://api.reuse.software/info/github.com/SemRels/plugin-template)
+[![Latest Release](https://img.shields.io/github/v/release/SemRels/publisher-docker?label=version&color=blue)](https://github.com/SemRels/publisher-docker/releases/latest)
+[![CI](https://github.com/SemRels/publisher-docker/actions/workflows/ci.yml/badge.svg)](https://github.com/SemRels/publisher-docker/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/SemRels/publisher-docker)](LICENSE)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/SemRels/publisher-docker/badge)](https://scorecard.dev/viewer/?uri=github.com/SemRels/publisher-docker)
+[![REUSE status](https://api.reuse.software/badge/github.com/SemRels/publisher-docker)](https://api.reuse.software/info/github.com/SemRels/publisher-docker)
 
-Template repository for SemRels plugins built as standalone Go subprocess binaries.
+`@semrel/publisher-docker` publishes one image that already exists in a
+Docker-compatible local daemon. It does not build the image. Semrel runs the
+standalone `semrel-plugin-publisher-docker` process during the publish phase.
 
-This template reflects the current SemRels plugin architecture: semrel executes a plain Go CLI binary as a subprocess, passes plugin configuration through `SEMREL_PLUGIN_*` variables, passes release context through `SEMREL_*` variables, reads plugin output from standard output, and treats exit code `0` as success and any non-zero exit code as failure. There is no gRPC transport, no network listener, and no protobuf plumbing to wire up.
+The primary documentation is in English. See the
+[central German documentation](https://semrel.io/de/plugins/publishers/publisher-docker/).
 
-## What the example plugin does
+## Prerequisites
 
-The scaffolded example is intentionally phase-agnostic. It reads `SEMREL_VERSION` and `SEMREL_DRY_RUN`, writes the required schema handshake to standard error, and prints a confirmation message to standard output:
+- a `docker` CLI on `PATH`;
+- a reachable Docker-compatible daemon containing the source image;
+- authentication configured before semrel runs, for example with
+  `docker login` or a CI credential helper.
 
-```text
-stderr: plugin_schema_version=1
-stdout: example plugin invoked for version 1.2.3 (dry-run: false)
-```
+The plugin never accepts credentials and never runs `docker login`. When
+semrel itself runs in a container, the container needs a Docker CLI, the
+daemon socket, and the relevant Docker authentication configuration. Access
+to the Docker daemon socket is effectively root-equivalent host access; only
+mount it into trusted jobs and containers.
 
-## Plugin contract
-
-| Item | Behavior |
-| --- | --- |
-| `plugin_schema_version=1` | The **first line written to stderr** must be `plugin_schema_version=1`. |
-| `SEMREL_VERSION` | Required release version for this example plugin. |
-| `SEMREL_DRY_RUN` | Optional boolean (`true`/`false`) indicating dry-run mode. |
-| `SEMREL_PLUGIN_*` | Reserved for your phase-specific plugin configuration. |
-| stdout | Write the plugin's functional output here. |
-| stderr | Write diagnostics, validation errors, and logs here. |
-| exit code | `0` means success; any non-zero code means failure. |
-
-## Repository layout
-
-```text
-cmd/plugin/              Thin environment-variable wrapper and process entry point
-internal/plugin/         Pure, testable plugin logic with no os/env dependencies
-.github/workflows/       CI, release, security, template-sync, and semrel self-release automation
-.semrel.yaml             semrel dogfooding configuration for this repository
-```
-
-## Use this template for a real plugin
-
-1. Create a new repository from this template or copy it into your plugin repository.
-2. Rename the Go module in `go.mod` to `github.com/SemRels/<your-plugin-repo>`.
-3. Rename the binary/package descriptions from `plugin-template` to your plugin name.
-4. Implement your phase-specific logic in `internal/plugin/` as pure Go.
-5. Keep `cmd/plugin/main.go` thin: read `SEMREL_*` / `SEMREL_PLUGIN_*` with `os.Getenv` (or an injected `getenv` in tests), translate them into a config struct, then call the internal package.
-6. Extend the README tables with every `SEMREL_PLUGIN_*` and `SEMREL_*` variable your plugin consumes.
-7. Update `.semrel.yaml` and replace the example phase assignment comments/configuration with the plugins and phases your real plugin release process needs.
-
-## Local development
+## Installation
 
 ```bash
-go build ./...
-go test ./...
+go install github.com/SemRels/publisher-docker/cmd/plugin@latest
+mv "$(go env GOPATH)/bin/plugin" \
+  "$HOME/.semrel/plugins/semrel-plugin-publisher-docker"
 ```
 
-## Example semrel configuration
+Released archives contain the platform binary. The published plugin container
+also includes the Docker CLI, but still requires an explicitly mounted daemon
+socket and authentication configuration.
+
+## Configuration
 
 ```yaml
 plugins:
-  - name: example-plugin
-    path: ~/.semrel/plugins/semrel-plugin-example
-    env:
-      SEMREL_PLUGIN_SAMPLE_OPTION: "value"
+  - uses: @semrel/publisher-docker
+    phase: release
+    args:
+      image: acme-api:build
+      ref: ghcr.io/acme/api:{version}
 ```
+
+Build and authenticate before invoking semrel:
+
+```bash
+docker build --tag acme-api:build .
+printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --password-stdin
+semrel release
+```
+
+Semrel maps `args.image` and `args.ref` to the subprocess environment
+variables shown below.
+
+| Configuration / variable | Required | Description |
+| --- | --- | --- |
+| `image` / `SEMREL_PLUGIN_IMAGE` | Yes | Existing local image reference or image ID. |
+| `ref` / `SEMREL_PLUGIN_REF` | Yes | Destination reference with an explicit tag and a `{version}` placeholder, for example `registry.example:5000/team/app:{version}`. Digest destinations are rejected. |
+| `SEMREL_VERSION` | One version variable | Release version. One leading `v` is removed and SemVer `+` is encoded as `_` for the Docker tag. |
+| `SEMREL_NEXT_VERSION` | Fallback | Used only when `SEMREL_VERSION` is empty. |
+| `SEMREL_DRY_RUN` | No | `true` or `1` inspects both images and prints the plan without tagging or pushing. Defaults to `false`. |
+
+All references are validated before Docker mutation. Empty values, control
+characters such as CR/LF, unresolved placeholders, digest destinations, and
+invalid Docker references fail closed.
+
+## Publication behavior
+
+1. Inspect the source image.
+2. Inspect the destination tag and decide whether it must be created,
+   replaced, or kept.
+3. Tag only when the destination does not already identify the source image.
+4. Inspect the destination again and verify its image ID.
+5. Execute exactly one `docker image push`.
+6. Report the immutable `repository@sha256:...` manifest reference obtained
+   from the push result or the matching `RepoDigests` entry.
+
+Example:
+
+```text
+publisher-docker: published ghcr.io/acme/api:1.4.0 as ghcr.io/acme/api@sha256:...
+```
+
+Docker command diagnostics are not relayed verbatim, preventing accidental
+credential disclosure. Errors identify the failed stage, including missing
+CLI, unavailable daemon, missing image, authentication, tagging, pushing, or
+digest verification.
+
+## Dry-run
+
+Direct plugin dry-run still requires the source image and Docker daemon. It
+performs source and destination inspection, then reports the exact tag/push
+plan without creating or replacing a tag and without contacting the registry
+with a push.
+
+```bash
+SEMREL_PLUGIN_IMAGE=acme-api:build \
+SEMREL_PLUGIN_REF='ghcr.io/acme/api:{version}' \
+SEMREL_VERSION=v1.4.0 \
+SEMREL_DRY_RUN=true \
+semrel-plugin-publisher-docker
+```
+
+Semrel core currently does not invoke release plugins during
+`semrel release --dry-run`; run the plugin directly with
+`SEMREL_DRY_RUN=true` when validating this publication plan.
+
+## Explicit non-goals
+
+The MVP does not build images, authenticate, sign, retry, manage tag policies,
+create channel tags, or assemble multi-platform images/manifests.
+
+## Development
+
+```bash
+go test ./...
+go test -race ./...
+go build ./cmd/plugin
+golangci-lint run ./...
+```
+
+The Linux integration gate requires Docker and a local `registry:2.8.3`
+service:
+
+```bash
+SEMREL_TEST_DOCKER_REGISTRY=localhost:5000 \
+  go test -count=1 -tags=integration -timeout=5m ./cmd/plugin
+```
+
+When the integration tag is selected, missing prerequisites fail the test
+rather than skipping it.
 
 ## License
 
