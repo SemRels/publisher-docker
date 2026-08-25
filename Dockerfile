@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2026 The publisher-docker Authors
 
+# ── build stage ────────────────────────────────────────────────────────────────
 FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS build
 
 ARG TARGETOS
@@ -13,19 +14,18 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -trimpath -ldflags="-s -w" \
-    -o /out/semrel-plugin-publisher-docker ./cmd/plugin
+    go build -trimpath -ldflags="-s -w" -o /out/plugin ./cmd/plugin
 
-FROM docker:29.6.2-cli@sha256:be132a9f282288de4afaf63379dff75711fda0147c6b72a9df44e51841402144 AS docker-cli
-
+# ── distroless release image ───────────────────────────────────────────────────
 FROM gcr.io/distroless/static-debian12:nonroot
 
-LABEL org.opencontainers.image.title="SemRel publisher-docker plugin" \
-      org.opencontainers.image.description="Publishes an existing local Docker image during a SemRel release" \
-      org.opencontainers.image.source="https://github.com/SemRels/publisher-docker" \
-      org.opencontainers.image.licenses="Apache-2.0"
+# NOTE: intentionally no repo-specific `org.opencontainers.image.*` LABEL block
+# here. sync-template.yml only substitutes the "publisher-docker Authors" line
+# in this file when propagating it to plugin repos (see `sed` step) — it does
+# NOT rewrite LABEL title/description/source values. Adding those here would
+# get copied verbatim (and wrongly) into every plugin's Dockerfile. Add labels
+# in each plugin's own Dockerfile after copying this template, not here.
 
-COPY --from=docker-cli /usr/local/bin/docker /usr/local/bin/docker
-COPY --from=build /out/semrel-plugin-publisher-docker /usr/local/bin/semrel-plugin-publisher-docker
+COPY --from=build /out/plugin /usr/local/bin/plugin
 USER nonroot
-ENTRYPOINT ["/usr/local/bin/semrel-plugin-publisher-docker"]
+ENTRYPOINT ["/usr/local/bin/plugin"]
