@@ -4,6 +4,7 @@
   "title": "publisher-docker plugin configuration",
   "description": "Schema v1 for publishing one existing local Docker image.",
   "type": "object",
+  "x-semrel-dry-run": true,
   "properties": {
     "SEMREL_PLUGIN_IMAGE": {
       "type": "string",
