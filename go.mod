@@ -1,6 +1,6 @@
 module github.com/SemRels/publisher-docker
 
-go 1.25
+go 1.27.2
 
 require (
 	github.com/distribution/reference v0.6.0
