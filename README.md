@@ -42,7 +42,7 @@ socket and authentication configuration.
 
 ```yaml
 plugins:
-  - uses: @semrel/publisher-docker
+  - uses: "@semrel/publisher-docker"
     phase: release
     args:
       image: acme-api:build
@@ -57,13 +57,17 @@ printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GHCR_USER" --passw
 semrel release
 ```
 
-Semrel maps `args.image` and `args.ref` to the subprocess environment
-variables shown below.
+Semrel maps each entry under `args` to the matching `SEMREL_PLUGIN_*` environment variable, so you can set either.
 
-| Configuration / variable | Required | Description |
+| Argument | Environment variable | Required | Description |
+| --- | --- | --- | --- |
+| `image` | `SEMREL_PLUGIN_IMAGE` | Required | Existing local image reference or image ID. |
+| `ref` | `SEMREL_PLUGIN_REF` | Required | Destination reference with an explicit tag and a `{version}` placeholder, for example `registry.example:5000/team/app:{version}`. Digest destinations are rejected. |
+
+Release context:
+
+| Variable | Required | Description |
 | --- | --- | --- |
-| `image` / `SEMREL_PLUGIN_IMAGE` | Yes | Existing local image reference or image ID. |
-| `ref` / `SEMREL_PLUGIN_REF` | Yes | Destination reference with an explicit tag and a `{version}` placeholder, for example `registry.example:5000/team/app:{version}`. Digest destinations are rejected. |
 | `SEMREL_VERSION` | One version variable | Release version. One leading `v` is removed and SemVer `+` is encoded as `_` for the Docker tag. |
 | `SEMREL_NEXT_VERSION` | Fallback | Used only when `SEMREL_VERSION` is empty. |
 | `SEMREL_DRY_RUN` | No | `true` or `1` inspects both images and prints the plan without tagging or pushing. Defaults to `false`. |

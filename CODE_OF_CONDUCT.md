@@ -1,6 +1,6 @@
 # Code of Conduct
 
-publisher-docker is committed to providing a welcoming and harassment-free community.
+`publisher-docker` is committed to providing a welcoming and harassment-free community.
 
 ## Our Pledge
 

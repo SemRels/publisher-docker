@@ -1,7 +1,7 @@
 //go:build integration && linux
 
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2026 The publisher-docker Authors
+// SPDX-FileCopyrightText: 2026 The semrel Authors
 
 package main
 
